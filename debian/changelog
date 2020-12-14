@@ -1,6 +1,7 @@
-applet-window-title (0.6.0-1) UNRELEASED; urgency=low
+applet-window-title (0.6.0+git0.ca9b155e-1) UNRELEASED; urgency=medium
 
   * Initial release. Closes: #nnnn
     <nnnn is the bug number of your ITP>
+  * New upstream version 0.6.0+git0.ca9b155e
 
- -- Ritesh Raj Sarraf <rrs@debian.org>  Sat, 13 Jun 2020 10:05:40 +0530
+ -- Ritesh Raj Sarraf <rrs@debian.org>  Mon, 14 Dec 2020 13:36:50 +0530
