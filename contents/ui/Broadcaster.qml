@@ -28,11 +28,14 @@ Item{
     property bool hiddenFromBroadcast: false
 
     readonly property bool showAppMenuEnabled: plasmoid.configuration.showAppMenuOnMouseEnter
-    property bool appMenuRequestsCooperation: false
     property bool menuIsPresent: false
+    property var appMenusRequestCooperation: []
+    property int appMenusRequestCooperationCount: 0
 
-    readonly property bool cooperationEstablished: appMenuRequestsCooperation && isActive
-    readonly property bool isActive: plasmoid.configuration.appMenuIsPresent && showAppMenuEnabled
+    readonly property bool cooperationEstablished: appMenusRequestCooperationCount>0 && isActive
+    readonly property bool isActive: plasmoid.configuration.appMenuIsPresent && showAppMenuEnabled && (plasmoid.formFactor === PlasmaCore.Types.Horizontal)
+
+    readonly property int sendActivateAppMenuCooperationFromEditMode: plasmoid.configuration.sendActivateAppMenuCooperationFromEditMode
 
     function sendMessage() {
         if (cooperationEstablished && menuIsPresent) {
@@ -46,10 +49,14 @@ Item{
         }
     }
 
-    Component.onDestruction: {
-        if (latteBridge) {
-            latteBridge.actions.broadcastToApplet("org.kde.windowappmenu", "setCooperation", false);
+    Component.onDestruction: broadcoastCooperationRequest(false)
+
+    onIsActiveChanged: {
+        if (!isActive) {
+            hiddenFromBroadcast = false;
         }
+
+        broadcoastCooperationRequest(isActive)
     }
 
     onCooperationEstablishedChanged: {
@@ -58,23 +65,35 @@ Item{
         }
     }
 
-    onIsActiveChanged: {
-        if (latteBridge) {
-            latteBridge.actions.broadcastToApplet("org.kde.windowappmenu", "setCooperation", isActive);
+    onSendActivateAppMenuCooperationFromEditModeChanged: {
+        if (plasmoid.configuration.sendActivateAppMenuCooperationFromEditMode >= 0) {
+            var values = {
+                appletId: plasmoid.id,
+                cooperation: plasmoid.configuration.sendActivateAppMenuCooperationFromEditMode
+            };
+
+            latteBridge.actions.broadcastToApplet("org.kde.windowappmenu",
+                                                  "activateAppMenuCooperationFromEditMode",
+                                                  values);
+
+            releaseSendActivateAppMenuCooperation.start();
         }
     }
 
-    onShowAppMenuEnabledChanged: {
-        if (showAppMenuEnabled && inEditMode) {
-            //!when the user chooses to enable cooperation in config window
-            latteBridge.actions.broadcastToApplet("org.kde.windowappmenu", "activateAppMenuCooperationFromEditMode", true);
+    function broadcoastCooperationRequest(enabled) {
+        if (latteBridge) {
+            var values = {
+                appletId: plasmoid.id,
+                cooperation: enabled
+            };
+            latteBridge.actions.broadcastToApplet("org.kde.windowappmenu", "setCooperation", values);
         }
     }
 
     Connections {
         target: latteBridge
         onBroadcasted: {
-            //console.log(" BROADCASTED FROM APPMENU ::: " + action + " : " + value);
+            var updateAppMenuCooperations = false;
 
             if (broadcaster.cooperationEstablished) {
                 if (action === "setVisible") {
@@ -90,10 +109,24 @@ Item{
 
             if (action === "isPresent") {
                 plasmoid.configuration.appMenuIsPresent = value;
-            } else if (action === "setCooperation" && showAppMenuEnabled) {
-                broadcaster.appMenuRequestsCooperation = value;
+            } else if (action === "setCooperation") {
+                updateAppMenuCooperations = true;
             } else if (action === "activateWindowTitleCooperationFromEditMode") {
-                plasmoid.configuration.showAppMenuOnMouseEnter = true;
+                plasmoid.configuration.showAppMenuOnMouseEnter = value.cooperation;
+                updateAppMenuCooperations = true;
+            }
+
+            if (updateAppMenuCooperations) {
+                var indexed = broadcaster.appMenusRequestCooperation.indexOf(value.appletId);
+                var isFiled = (indexed >= 0);
+
+                if (value.cooperation && !isFiled) {
+                    broadcaster.appMenusRequestCooperation.push(value.appletId);
+                    broadcaster.appMenusRequestCooperationCount++;
+                } else if (!value.cooperation && isFiled) {
+                    broadcaster.appMenusRequestCooperation.splice(indexed, 1);
+                    broadcaster.appMenusRequestCooperationCount--;
+                }
             }
         }
     }
@@ -112,6 +145,12 @@ Item{
                 }
             }
         }
+    }
+
+    Timer {
+        id: releaseSendActivateAppMenuCooperation
+        interval: 5
+        onTriggered: plasmoid.configuration.sendActivateAppMenuCooperationFromEditMode = -1;
     }
 
     //!!!! MouseArea for Broadcaster
