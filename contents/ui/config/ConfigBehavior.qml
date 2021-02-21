@@ -23,6 +23,8 @@ import QtQuick.Layouts 1.0
 
 import org.kde.plasma.core 2.0 as PlasmaCore
 
+import org.kde.kirigami 2.4 as Kirigami
+
 Item {
     id: behaviorPage
 
@@ -30,7 +32,7 @@ Item {
     property alias cfg_filterActivityInfo: filterActivityChk.checked
 
     property alias cfg_showAppMenuOnMouseEnter: showAppMenuChk.checked
-    property alias cfg_showTooltip: showTooltip.checked    
+    property alias cfg_showTooltip: showTooltip.checked
     property alias cfg_actionScrollMinimize: cycleMinimizeChk.checked
 
     property alias cfg_subsMatch: behaviorPage.selectedMatches
@@ -49,7 +51,11 @@ Item {
     ColumnLayout {
         id:mainColumn
         spacing: units.largeSpacing
-        Layout.fillWidth: true
+        width:parent.width - anchors.leftMargin * 2
+        height: parent.height
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.leftMargin: 2
 
         GridLayout {
             columns: 2
@@ -78,6 +84,7 @@ Item {
             CheckBox{
                 id: showTooltip
                 text: i18n("Show tooltip on hover")
+                enabled: showAppMenuChk.visible && !showAppMenuChk.checked
             }
 
             Label{
@@ -121,7 +128,8 @@ Item {
             TextField {
                 id: placeHolder
                 text: plasmoid.configuration.placeHolder
-                Layout.fillWidth: true
+                Layout.minimumWidth: substitutionsBtn.width * 1.5
+                Layout.maximumWidth: Layout.minimumWidth
                 enabled: !filterActivityChk.checked
 
                 placeholderText: i18n("placeholder text...")
@@ -138,6 +146,7 @@ Item {
             }
 
             Button{
+                id: substitutionsBtn
                 checkable: true
                 checked: subsSlidingBox.shown
                 text: "  " + i18n("Manage substitutions...") + "  "
@@ -156,5 +165,56 @@ Item {
                 }
             }
         }
+
+        Item {
+            Layout.fillHeight: true
+            Layout.fillWidth: true
+        }
+
+        Kirigami.InlineMessage {
+            id: inlineMessage
+            Layout.fillWidth: true
+            Layout.bottomMargin: 5
+
+            type: Kirigami.MessageType.Warning
+            text: cfg_showAppMenuOnMouseEnter ?
+                      i18n("Would you like <b>also to activate</b> that behavior to surrounding Window AppMenu?") :
+                      i18n("Would you like <b>also to deactivate</b> that behavior to surrounding Window AppMenu?")
+
+            actions: [
+                Kirigami.Action {
+                    icon.name: "dialog-yes"
+                    text: i18n("Yes")
+                    onTriggered: {
+                        plasmoid.configuration.sendActivateAppMenuCooperationFromEditMode = cfg_showAppMenuOnMouseEnter;
+                        inlineMessage.visible = false;
+                    }
+                },
+                Kirigami.Action {
+                    icon.name: "dialog-no"
+                    text: "No"
+                    onTriggered: {
+                        inlineMessage.visible = false;
+                    }
+                }
+            ]
+
+            readonly property bool showWindowAppMenuTouched: showAppMenuChk.checked !== plasmoid.configuration.showAppMenuOnMouseEnter
+
+            onShowWindowAppMenuTouchedChanged: {
+                if (plasmoid.configuration.containmentType !== 2 /*Latte Containment*/) {
+                    visible = false;
+                    return;
+                }
+
+                if (showWindowAppMenuTouched){
+                    inlineMessage.visible = true;
+                } else {
+                    inlineMessage.visible = false;
+                }
+            }
+        }
+
     }
+
 }
