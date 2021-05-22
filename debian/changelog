@@ -1,3 +1,9 @@
+applet-window-title (0.6.0+git2.868899d7-1) norbert; urgency=medium
+
+  * New upstream version 0.6.0+git2.868899d7
+
+ -- Ritesh Raj Sarraf <rrs@debian.org>  Sat, 22 May 2021 14:05:15 +0530
+
 applet-window-title (0.6.0+git1.c33da193-1) norbert; urgency=medium
 
   * Initial release. Closes: #nnnn
