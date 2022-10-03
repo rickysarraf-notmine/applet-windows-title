@@ -1,8 +1,9 @@
-applet-window-title (0.7.0+git0.45a5d751-1) UNRELEASED; urgency=medium
+applet-window-title (0.7.0+git1.efa9e78-1) UNRELEASED; urgency=medium
 
   * New upstream version 0.7.0+git0.45a5d751
+  * New upstream version 0.7.0+git1.efa9e78
 
- -- Ritesh Raj Sarraf <rrs@debian.org>  Mon, 30 May 2022 14:13:21 +0530
+ -- Ritesh Raj Sarraf <rrs@debian.org>  Mon, 03 Oct 2022 13:27:53 +0530
 
 applet-window-title (0.7.0-1) norbert; urgency=medium
 
